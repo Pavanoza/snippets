@@ -93,6 +93,15 @@ NTSTATUS (NTAPI *ZwCreateThreadEx) (
     _In_opt_ PVOID AttributeList 
 );
 
+NTSTATUS (NTAPI *ZwUnmapViewOfSection) (
+    _In_     HANDLE ProcessHandle,
+    _In_opt_ PVOID  BaseAddress
+);
+
+NTSTATUS (NTAPI *ZwClose) (
+    _In_ HANDLE Handle
+);
+
 //kernel32 api
 BOOL 
 (WINAPI *CreateProcessInternalW)(HANDLE hToken, 

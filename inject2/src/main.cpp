@@ -24,6 +24,12 @@ BOOL load_ntdll_functions()
     ZwCreateThreadEx = (NTSTATUS (NTAPI *) (PHANDLE, ACCESS_MASK, POBJECT_ATTRIBUTES, HANDLE, PVOID, PVOID, ULONG, ULONG_PTR, SIZE_T, SIZE_T, PVOID)) GetProcAddress(hNtdll,"ZwCreateThreadEx");
     if (ZwCreateThreadEx == NULL) return FALSE;
 
+    ZwUnmapViewOfSection = (NTSTATUS (NTAPI *) (HANDLE, PVOID)) GetProcAddress(hNtdll, "ZwUnmapViewOfSection");
+    if (ZwUnmapViewOfSection == NULL) return FALSE;
+
+    ZwClose = (NTSTATUS (NTAPI *) (HANDLE)) GetProcAddress(hNtdll, "ZwClose");
+    if (ZwClose == NULL) return FALSE;
+
     return TRUE;
 }
 
@@ -121,6 +127,9 @@ int main(void)
         system("pause");
         return (-1);
     }
+    ZwUnmapViewOfSection(GetCurrentProcess(), sectionBaseAddress);
+    ZwClose(hSection);
+    hSection = NULL;
 
     //create a new thread for the injected code:
     HANDLE threadHandle = NULL;
