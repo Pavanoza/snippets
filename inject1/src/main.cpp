@@ -1,5 +1,6 @@
 /*
 Injection Demo #1 : Entry Point Patching
+works for PE 32 bit
 CC-BY: hasherezade
 */
 
@@ -87,18 +88,18 @@ int main(void)
 
     printf("PID = 0x%x\n", pbi.UniqueProcessId);
 
-    DWORD ImageBase = 0;
+    LPCVOID ImageBase = 0;
     DWORD read_bytes = 0;
     if (!ReadProcessMemory(pi.hProcess, (BYTE*)pbi.PebBaseAddress + 8, &ImageBase, sizeof(ImageBase), &read_bytes) && read_bytes != sizeof(ImageBase))
     {
         printf("[ERROR] ReadProcessMemory failed\n");
         return (-1);
     }
-    printf("ImageBase = 0x%x\n", ImageBase);
+    printf("ImageBase = 0x%p\n", ImageBase);
 
     // read headers in order to find Entry Point:
     unsigned char hdrs_buf[0x1000];
-    if (!ReadProcessMemory(pi.hProcess, (LPCVOID)ImageBase, hdrs_buf, sizeof(hdrs_buf), &read_bytes) && read_bytes != sizeof(hdrs_buf))
+    if (!ReadProcessMemory(pi.hProcess, ImageBase, hdrs_buf, sizeof(hdrs_buf), &read_bytes) && read_bytes != sizeof(hdrs_buf))
     {
         printf("[-] ReadProcessMemory failed\n");
         return (-1);
