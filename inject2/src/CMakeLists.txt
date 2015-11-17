@@ -9,7 +9,7 @@ set (srcs
 
 set (hdrs
     main.h
-	payload.h
+    payload.h
 )
 
 add_executable (Inject2 ${hdrs} ${srcs})
