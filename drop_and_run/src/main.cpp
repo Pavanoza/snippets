@@ -65,7 +65,7 @@ BOOL dropResource(char *payloadName)
 
 int main(int argc, char *argv[])
 {
-    char *path = "picture.dll";
+    char *path = "demo.html";
     if (argc >= 2) {
         path = argv[1];
     }

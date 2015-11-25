@@ -50,7 +50,7 @@ END
 // RCDATA
 //
 
-MY_RESOURCE             RCDATA                  "picture.jpg"
+MY_RESOURCE             RCDATA                  "demo.html"
 
 #endif
 /////////////////////////////////////////////////////////////////////////////
