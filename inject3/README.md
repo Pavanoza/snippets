@@ -9,7 +9,7 @@ Inject3
 What it does:<br/>
 1) Creates a new suspended process of calc.exe - using CreateProcessInternalW<br/>
 2) Adds a new section and copy payload there<br/>
-3) Insert the shellcode to the main - thread using NtQueueApcThread<br/>
+3) Insert the shellcode to the main thread using <b>NtQueueApcThread</b><br/>
 4) Resumes the main thread of calc.exe<br/>
 6) Terminates the original application<br/>
 <hr/>
