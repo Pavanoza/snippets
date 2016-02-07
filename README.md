@@ -5,3 +5,4 @@ Various code snippets and small PoCs, to be used for tests or as ready-made skel
 + <b>inject1</b> - injecton demo - patches Entry Point of calc.exe
 + <b>inject2</b> - injection demo - adds a thread with shellcode to calc.exe
 + <b>inject3</b> - injection demo - injects shellcode to calc.exe using NtQueueApcThread
++ <b>inject3</b> - injection demo - injects full image into calc.exe, applies relocations and deploys a function using NtQueueApcThread
