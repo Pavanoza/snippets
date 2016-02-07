@@ -14,4 +14,4 @@ What it does:<br/>
 4) Resumes the main thread of calc.exe<br/>
 6) Terminates the original application<br/>
 <hr/>
-Works for PE 32 bit, relocation table is required!
+Compile as 32 bit PE, with dynamic base. Relocation table is required for it to work.
