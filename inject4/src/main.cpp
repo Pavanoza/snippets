@@ -207,7 +207,7 @@ int main(void)
         system("pause");
         return (-1);
     }
-	printf("New section, BaseAddress: %p ViewSize: %p\n", sectionBaseAddress, viewSize);
+    printf("New section, BaseAddress: %p ViewSize: %p\n", sectionBaseAddress, viewSize);
     printf("Mapping into: %p <- current image: %p %p\n", sectionBaseAddress, ImageBaseAddress, ImageSize);
     //copy full current image into a new section:
     RtlCopyMemory(sectionBaseAddress, ImageBaseAddress, ImageSize);
