@@ -138,7 +138,7 @@ int main(int argc, char *argv[])
     
     HANDLE hSection = NULL;
     
-	PVOID ImageBaseAddress = NtCurrentTeb()->Peb->ImageBaseAddress;
+    PVOID ImageBaseAddress = NtCurrentTeb()->Peb->ImageBaseAddress;
     PIMAGE_NT_HEADERS NtHeaders = RtlImageNtHeader(ImageBaseAddress);
     if (NtHeaders == NULL)
     {
