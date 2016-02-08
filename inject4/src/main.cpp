@@ -127,69 +127,56 @@ void NTAPI testFunction(PVOID NormalContext, PVOID SystemArgument1, PVOID System
 
 int main(int argc, char *argv[])
 {
-  if (load_ntdll_functions() == FALSE) {
-    printf("Failed to load NTDLL function\n");
-    return (-1);
-  }
-  if (load_kernel32_functions() == FALSE) {
-    printf("Failed to load KERNEL32 function\n");
-    return (-1);
-  }
-
-  STARTUPINFO si;
-  memset(&si, 0, sizeof(STARTUPINFO));
-  si.cb = sizeof(STARTUPINFO);
-
-  PROCESS_INFORMATION pi;
-  memset(&pi, 0, sizeof(PROCESS_INFORMATION));
-
-  PROCESS_BASIC_INFORMATION pbi;
-  memset(&pbi, 0, sizeof(PROCESS_BASIC_INFORMATION));
-
-  HANDLE hSection = NULL;
-  OBJECT_ATTRIBUTES hAttributes;
-  memset(&hAttributes, 0, sizeof(OBJECT_ATTRIBUTES));
-
-  PVOID ImageBaseAddress = NtCurrentTeb()->Peb->ImageBaseAddress;
-
-  PIMAGE_NT_HEADERS NtHeaders = RtlImageNtHeader(ImageBaseAddress);
-  if (NtHeaders == NULL)
-  {
-    printf("[ERROR] RtlImageNtHeader failed, error : %d\n", GetLastError());
-    system("pause");
-    return (-1);
-  }
-
-  LARGE_INTEGER MaximumSize;
-  ULONG ImageSize = NtHeaders->OptionalHeader.SizeOfImage;
-
-  MaximumSize.LowPart = ImageSize;
-  MaximumSize.HighPart = 0;
-
-  NTSTATUS Status = NULL;
-  if ((Status = ZwCreateSection( &hSection, SECTION_ALL_ACCESS, NULL, &MaximumSize, PAGE_EXECUTE_READWRITE, SEC_COMMIT, NULL)) != STATUS_SUCCESS)
-  {
-    printf("[ERROR] ZwCreateSection failed, status : %x\n", Status);
-    system("pause");
-    return (-1);
-  }
-
-  printf("Section handle: %x\n", hSection);
-
-  HANDLE hProcess = NULL;
-  PVOID pSectionBaseAddress = NULL;
-  SIZE_T ViewSize = 0;
-  DWORD dwInheritDisposition = 1; //VIEW_SHARE
-
-  // map the section in context of current process:
-  if ((Status = NtMapViewOfSection(hSection, GetCurrentProcess(), &pSectionBaseAddress, NULL, NULL, NULL, &ViewSize, dwInheritDisposition, NULL, PAGE_EXECUTE_READWRITE))!= STATUS_SUCCESS)
-  {
-    printf("[ERROR] NtMapViewOfSection failed, status : %x\n", Status);
-    system("pause");
-    return (-1);
-  }
+    if (load_ntdll_functions() == FALSE) {
+        printf("Failed to load NTDLL function\n");
+        return (-1);
+    }
+    if (load_kernel32_functions() == FALSE) {
+        printf("Failed to load KERNEL32 function\n");
+        return (-1);
+    }
     
-  printf("Created new section, BaseAddress: %p ViewSize: %p\n", pSectionBaseAddress, ViewSize);
+    HANDLE hSection = NULL;
+    
+	PVOID ImageBaseAddress = NtCurrentTeb()->Peb->ImageBaseAddress;
+    PIMAGE_NT_HEADERS NtHeaders = RtlImageNtHeader(ImageBaseAddress);
+    if (NtHeaders == NULL)
+    {
+        printf("[ERROR] RtlImageNtHeader failed, error : %d\n", GetLastError());
+        system("pause");
+        return (-1);
+    }
+
+    LARGE_INTEGER MaximumSize;
+    ULONG ImageSize = NtHeaders->OptionalHeader.SizeOfImage;
+
+    MaximumSize.LowPart = ImageSize;
+    MaximumSize.HighPart = 0;
+
+    NTSTATUS Status = NULL;
+    if ((Status = ZwCreateSection( &hSection, SECTION_ALL_ACCESS, NULL, &MaximumSize, PAGE_EXECUTE_READWRITE, SEC_COMMIT, NULL)) != STATUS_SUCCESS)
+    {
+        printf("[ERROR] ZwCreateSection failed, status : %x\n", Status);
+        system("pause");
+        return (-1);
+    }
+
+    printf("Section handle: %x\n", hSection);
+
+    HANDLE hProcess = NULL;
+    PVOID pSectionBaseAddress = NULL;
+    SIZE_T ViewSize = 0;
+    DWORD dwInheritDisposition = 1; //VIEW_SHARE
+
+    // map the section in context of current process:
+    if ((Status = NtMapViewOfSection(hSection, GetCurrentProcess(), &pSectionBaseAddress, NULL, NULL, NULL, &ViewSize, dwInheritDisposition, NULL, PAGE_EXECUTE_READWRITE))!= STATUS_SUCCESS)
+    {
+        printf("[ERROR] NtMapViewOfSection failed, status : %x\n", Status);
+        system("pause");
+        return (-1);
+    }
+    
+    printf("Created new section, BaseAddress: %p ViewSize: %p\n", pSectionBaseAddress, ViewSize);
     printf("Mapping into: %p <- current image: %p %p\n", pSectionBaseAddress, ImageBaseAddress, ImageSize);
     RtlCopyMemory(pSectionBaseAddress, ImageBaseAddress, ImageSize);
     
@@ -199,7 +186,7 @@ int main(int argc, char *argv[])
         printf("Applying relocations failed, cannot continue!");
         ZwTerminateProcess(GetCurrentProcess(), STATUS_FAILURE);
     }
-  printf("Applied relocations!\n");
+    printf("Applied relocations!\n");
 
     ULONG_PTR offsetFromBase = (ULONG_PTR) &testFunction - (ULONG_PTR)ImageBaseAddress;
     printf("testFunction offset: %p\n", offsetFromBase);
