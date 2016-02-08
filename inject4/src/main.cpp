@@ -171,29 +171,28 @@ int main(void)
     OBJECT_ATTRIBUTES hAttributes;
     memset(&hAttributes, 0, sizeof(OBJECT_ATTRIBUTES));
 
-	PVOID ImageBaseAddress = NtCurrentTeb()->Peb->ImageBaseAddress;
+    PVOID ImageBaseAddress = NtCurrentTeb()->Peb->ImageBaseAddress;
+    PIMAGE_NT_HEADERS NtHeaders = RtlImageNtHeader(ImageBaseAddress);
+    if (NtHeaders == NULL)
+    {
+        printf("[ERROR] RtlImageNtHeader failed, error : %d\n", GetLastError());
+        system("pause");
+        return (-1);
+    }
 
-	PIMAGE_NT_HEADERS NtHeaders = RtlImageNtHeader(ImageBaseAddress);
-	if (NtHeaders == NULL)
-	{
-		printf("[ERROR] RtlImageNtHeader failed, error : %d\n", GetLastError());
-		system("pause");
-		return (-1);
-	}
+    LARGE_INTEGER MaximumSize;
+    ULONG ImageSize = NtHeaders->OptionalHeader.SizeOfImage;
 
-	LARGE_INTEGER MaximumSize;
-	ULONG ImageSize = NtHeaders->OptionalHeader.SizeOfImage;
+    MaximumSize.LowPart = ImageSize;
+    MaximumSize.HighPart = 0;
 
-	MaximumSize.LowPart = ImageSize;
-	MaximumSize.HighPart = 0;
-
-	NTSTATUS Status = NULL;
-	if ((Status = ZwCreateSection( &hSection, SECTION_ALL_ACCESS, NULL, &MaximumSize, PAGE_EXECUTE_READWRITE, SEC_COMMIT, NULL)) != STATUS_SUCCESS)
-	{
-		printf("[ERROR] ZwCreateSection failed, status : %x\n", Status);
-		system("pause");
-		return (-1);
-	}
+    NTSTATUS Status = NULL;
+    if ((Status = ZwCreateSection( &hSection, SECTION_ALL_ACCESS, NULL, &MaximumSize, PAGE_EXECUTE_READWRITE, SEC_COMMIT, NULL)) != STATUS_SUCCESS)
+    {
+        printf("[ERROR] ZwCreateSection failed, status : %x\n", Status);
+        system("pause");
+        return (-1);
+    }
 
     HANDLE hProcess = NULL;
     PVOID sectionBaseAddress = NULL;
