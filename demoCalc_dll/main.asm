@@ -12,15 +12,14 @@ includelib kernel32.lib
 includelib SHELL32.LIB
 
 .data
-szOpen DB "open",0
+szOpen db "open",0
 szCalcPath db "%SystemRoot%\\system32\\calc.exe",0
 
 .code
 DeployCalc proc
     Local Buffer[MAX_PATH]:BYTE
-
     invoke ExpandEnvironmentStrings, OFFSET szCalcPath, ADDR Buffer, MAX_PATH
-    Invoke ShellExecute, NULL,Offset szOpen, ADDR Buffer ,NULL, NULL, SW_SHOWNORMAL
+    invoke ShellExecute, NULL, Offset szOpen, ADDR Buffer, NULL, NULL, SW_SHOWNORMAL
     ret
 DeployCalc endp
 
