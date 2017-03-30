@@ -147,7 +147,6 @@ BOOL CALLBACK check_window(HWND hWnd, LPARAM lParam)
     std::set<DWORD>* class_blacklist = (std::set<DWORD>*) lParam;
 
     char class_name[MAX_PATH];
-	char title[MAX_PATH];
     GetClassName(hWnd, class_name, MAX_PATH);
 
     DWORD checksum = calc_checksum(class_name, true);
