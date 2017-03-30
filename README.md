@@ -7,3 +7,4 @@ Various code snippets and small PoCs, to be used for tests or as ready-made skel
 + <b>inject2</b> - injection demo - adds a thread with shellcode to calc.exe
 + <b>inject3</b> - injection demo - injects shellcode to calc.exe using NtQueueApcThread
 + <b>inject4</b> - injection demo - injects full image self (as a new section), applies relocations and deploys a function
++ <b>neutrino_env_check.cpp</b> - Set of defensive environment checks - against VM, sandbox, monitoring tools etc. Implementation based on Neutrino Bot Loader.
