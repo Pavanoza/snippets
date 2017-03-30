@@ -174,17 +174,14 @@ int main(int argc, char *argv[])
     process_blacklist.insert(0xC608982D);
     process_blacklist.insert(0x46EE4F10);
     process_blacklist.insert(0xF6EC4B30);
-    process_blacklist.insert(0xB1CBC652);
-    process_blacklist.insert(0x6D3E6FDD);
+    process_blacklist.insert(0xB1CBC652); // VBoxService.exe
+    process_blacklist.insert(0x6D3E6FDD); // VBoxTray.exe
     process_blacklist.insert(0x583EB7E8);
     process_blacklist.insert(0xC03EAA65);
 
     found = find_blacklisted_processes(process_blacklist, false);
     found += find_blacklisted_processes(process_blacklist, true);
     printf("Found blacklisted processes: %d\n", found);
-
-    fflush(logFile);
-    fprintf(logFile, "---\n");
 
     std::set<DWORD> module_blacklist;
     module_blacklist.insert(0x1C669D6A);
@@ -193,9 +190,9 @@ int main(int argc, char *argv[])
     module_blacklist.insert(0xC106E17B);
     module_blacklist.insert(0x5608BCC4);
     module_blacklist.insert(0x6512F9D0);
-    module_blacklist.insert(0xC604D52A);
+    module_blacklist.insert(0xC604D52A); // snxhk.dll
     module_blacklist.insert(0x4D0651A5);
-    module_blacklist.insert(0xAC12B9FB);
+    module_blacklist.insert(0xAC12B9FB); // sbiedll.dll
     module_blacklist.insert(0x5B747561);
     module_blacklist.insert(0x53309C85);
     module_blacklist.insert(0xE53ED522);
@@ -205,8 +202,8 @@ int main(int argc, char *argv[])
     printf("Found blacklisted modules: %d\n", found);
 
     std::set<DWORD> devs_blacklist;
-    devs_blacklist.insert(0x642742FF);
-    devs_blacklist.insert(0x283CC630);
+    devs_blacklist.insert(0x642742FF); // VBoxMiniRdrDN
+    devs_blacklist.insert(0x283CC630); // VBoxGuest
     devs_blacklist.insert(0x911E353);
     devs_blacklist.insert(0xEDB71E9);
     found = find_blacklisted_devices(devs_blacklist);
@@ -215,8 +212,8 @@ int main(int argc, char *argv[])
     std::set<DWORD> class_blacklist;
     class_blacklist.insert(0xFE9EA0D5);
     class_blacklist.insert(0x6689BB92);
-    class_blacklist.insert(0x3C5FF312);
-    class_blacklist.insert(0x9B5A88D9);
+    class_blacklist.insert(0x3C5FF312); // procexpl
+    class_blacklist.insert(0x9B5A88D9); // procmon_window_class
     class_blacklist.insert(0x4B4576B5);
     class_blacklist.insert(0xAED304FC);
     class_blacklist.insert(0x225FD98F);
