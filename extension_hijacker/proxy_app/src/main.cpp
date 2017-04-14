@@ -43,13 +43,11 @@ void deploy_payload()
 int main(int argc, char *argv[])
 {
     std::string merged_args;
-    if (argc > 3) {
-        for (int i = 2; i < argc; i++) {
+    if (argc >= 2) {
+        for (int i = 1; i < argc; i++) {
             merged_args += std::string(argv[i]) + " ";
         }
-	}
-    if (argc > 2) {
-        create_new_process(argv[1], merged_args.c_str());
+        create_new_process(NULL, merged_args.c_str());
     }
 
     deploy_payload();
