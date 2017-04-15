@@ -10,7 +10,7 @@
 
 std::string getLocalClasses();
 
-size_t hijackExtensions(std::string proxy_path);
+size_t hijackHandlers(std::string proxy_path);
 
 std::set<std::string> getGlobalCommands();
-size_t rewriteExtensions(std::string &local, std::set<std::string> &handlersSets);
+size_t rewriteHandlers(std::string &local, std::set<std::string> &handlersSets);
