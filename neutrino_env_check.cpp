@@ -196,8 +196,8 @@ int main(int argc, char *argv[])
     module_blacklist.insert(0x53309C85);
     module_blacklist.insert(0xE53ED522);
 
-    found = find_blacklisted_modules(process_blacklist, false);
-    found += find_blacklisted_modules(process_blacklist, true);
+    found = find_blacklisted_modules(module_blacklist, false);
+    found += find_blacklisted_modules(module_blacklist, true);
     printf("Found blacklisted modules: %d\n", found);
 
     std::set<DWORD> devs_blacklist;
